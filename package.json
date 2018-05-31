@@ -1,0 +1,35 @@
+{
+  "name": "draft-js-transactions",
+  "version": "1.0.0",
+  "description": "Stage multiple codependent edits to a Draft EditorState and apply them all at once",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/andrewbranch/draft-js-transactions.git"
+  },
+  "keywords": [
+    "Draft",
+    "React"
+  ],
+  "author": "Andrew Branch <andrew@wheream.io>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andrewbranch/draft-js-transactions/issues"
+  },
+  "homepage": "https://github.com/andrewbranch/draft-js-transactions#readme",
+  "devDependencies": {
+    "@types/draft-js": "^0.10.23",
+    "draft-js": "^0.10.5",
+    "immutable": "^3.8.2",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
+    "typescript": "^2.9.1-insiders.20180525"
+  },
+  "peerDependencies": {
+    "draft-js": "^0.10.5",
+    "immutable": "~3.7.4"
+  }
+}
