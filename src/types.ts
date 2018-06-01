@@ -43,7 +43,7 @@ export type Insertion = {
   /** The inline styles to apply to the inserted text. */
   style?: OrderedSet<string> | InsertionCallback<OrderedSet<string>>;
   /** The key of the Draft Entity to apply to the inserted text. */
-  entityKey?: string | null | InsertionCallback<string | null>;
+  entityKey?: string | InsertionCallback<string>;
   /**
    * Defines where the insertion should occur relative to a selection edge
    * in the case that the insertion takes place at the same offset as an
@@ -87,3 +87,5 @@ export interface Transaction {
   removeEdit(edit: Edit): Transaction;
   apply(editorState: EditorState): EditorState;
 };
+
+export type ChangeType = typeof EditorState.push extends (_: any, __: any, changeType: infer T) => any ? T : never;
