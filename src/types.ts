@@ -1,4 +1,5 @@
 import { OrderedSet } from 'immutable';
+import { EditorState } from 'draft-js';
 
 /** Describes the attributes of the characters immediately before and after an offset in a ContentBlock. */
 export type NeighboringCharacterAttributes<T> = { before: T | undefined, after: T | undefined };
@@ -51,19 +52,13 @@ export type Insertion = {
   selectionEdgeHandling?: SelectionEdgeHandling;
 };
 
-/**
- * An edit within a block that can delete and insert characters at a specific position.
- */
-export type SliceEdit = {
-  type: 'slice',
+export interface BaseEdit {
+  /** The type identifier for the edit. */
+  type: string;
   /** The key of the Draft ContentBlock within which the edit should be performed. */
   blockKey: string;
   /** The character position within the block where the edit should start. */
   offset: number;
-  /** The number of characters to remove, starting at `offset`. */
-  deletionLength?: number;
-  /** The description of the text to insert at `offset`. */
-  insertion?: Insertion;
   /**
    * Defines an order of precedence that will be used to decide the order in which
    * edits are applied in the case that multiple edits have the same `offset`.
@@ -72,4 +67,23 @@ export type SliceEdit = {
    * transaction.
    */
   precedence?: number;
+}
+
+/**
+ * An edit within a block that can delete and insert characters at a specific position.
+ */
+export interface SliceEdit extends BaseEdit {
+  type: 'slice',
+  /** The number of characters to remove, starting at `offset`. */
+  deletionLength?: number;
+  /** The description of the text to insert at `offset`. */
+  insertion?: Insertion;
+};
+
+export type Edit = SliceEdit;
+
+export interface Transaction {
+  addEdit(edit: Edit): Transaction;
+  removeEdit(edit: Edit): Transaction;
+  apply(editorState: EditorState): EditorState;
 };
