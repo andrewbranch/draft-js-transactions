@@ -1,10 +1,10 @@
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 import { EditorState } from 'draft-js';
 import { Transaction as ITransaction, Edit } from './types';
 import { addEdit, removeEdit, apply } from './transactionBase';
 
 export class Transaction implements ITransaction {
-  private edits: List<Edit> = List();
+  private edits: Map<string, List<Edit>> = Map();
   public addEdit(edit: Edit) {
     this.edits = addEdit(this.edits, edit);
     return this;

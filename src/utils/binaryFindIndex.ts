@@ -1,6 +1,6 @@
 import { Collection } from 'immutable';
 
-export type ComparerFunction<T> = (a: T | undefined, b: T | undefined) => number;
+export type ComparerFunction<T> = (a: T, b: T) => number;
 
 function defaultValueComparer(a: any, b: any): number {
   if (a > b) return 1;
@@ -46,7 +46,7 @@ export function binaryFindIndex<T, U = any>(
   collection: Collection.Indexed<T>,
   insertion: T,
   valueExtractor: (item: T) => U = (item: any) => item,
-  valueComparer: (a: U | undefined, b: U | undefined) => number = defaultValueComparer
+  valueComparer: ComparerFunction<U> = defaultValueComparer
 ): number {
   return _binaryFindIndex(
     collection,

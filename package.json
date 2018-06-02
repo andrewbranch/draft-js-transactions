@@ -4,7 +4,7 @@
   "description": "Stage multiple codependent edits to a Draft EditorState and apply them all at once",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "repository": {
     "type": "git",
