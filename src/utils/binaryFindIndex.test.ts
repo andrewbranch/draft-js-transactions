@@ -28,9 +28,8 @@ describe('utils > binaryFindIndex', () => {
     expect(binaryFindIndex(List.of(4), 5)).toBe(1);
   });
 
-
-  test('should work for a list with equal elements', () => {
+  test('inserts equal elements at the end', () => {
     const list = List.of(2, 2, 2, 2);
-    expect(binaryFindIndex(list, 2)).toBe(1);
+    expect(binaryFindIndex(list, 2)).toBe(4);
   });
 });

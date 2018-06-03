@@ -57,6 +57,7 @@ describe('transactionBase', () => {
     });
   });
 
+ 
   describe('apply', () => {
     test('can insert characters at multiple positions in a block', () => {
       const editorState = createEditorState('one two');
@@ -131,6 +132,117 @@ describe('transactionBase', () => {
       });
 
       expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('d e f');
+    });
+
+    test('can replace multiple ranges with longer insertions than deletions', () => {
+      const editorState = createEditorState('one x three x five');
+      const blocks = editorState.getCurrentContent().getBlocksAsArray();
+      let editMap: Map<string, List<Edit>> = Map();
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 1,
+        insertion: { text: 'two' }
+      });
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 12,
+        deletionLength: 1,
+        insertion: { text: 'four' }
+      });
+
+      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one two three four five');
+    });
+
+    test('can replace multiple ranges with shorter insertions than deletions', () => {
+      const editorState = createEditorState('one two three four five');
+      const blocks = editorState.getCurrentContent().getBlocksAsArray();
+      let editMap: Map<string, List<Edit>> = Map();
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 3,
+        insertion: { text: 'x' }
+      });
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 14,
+        deletionLength: 4,
+        insertion: { text: 'x' }
+      });
+
+      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three x five');
+    });
+
+    test('can insert text into a deleted range', () => {
+      const editorState = createEditorState('one two three');
+      const blocks = editorState.getCurrentContent().getBlocksAsArray();
+      let editMap: Map<string, List<Edit>> = Map();
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 3,
+        insertion: { text: '' }
+      });
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 0,
+        insertion: { text: 'x' }
+      });
+
+      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
+    });
+
+    test('can replace text in a deleted range', () => {
+      const editorState = createEditorState('one two three');
+      const blocks = editorState.getCurrentContent().getBlocksAsArray();
+      let editMap: Map<string, List<Edit>> = Map();
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 3,
+        insertion: { text: '' }
+      });
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 2,
+        insertion: { text: 'x' }
+      });
+
+      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
+    });
+
+
+    test('can replace text overlapping deleted range', () => {
+      const editorState = createEditorState('one two three');
+      const blocks = editorState.getCurrentContent().getBlocksAsArray();
+      let editMap: Map<string, List<Edit>> = Map();
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 3,
+        insertion: { text: '' }
+      });
+      editMap = addEdit(editMap, {
+        type: 'slice',
+        blockKey: blocks[0].getKey(),
+        offset: 4,
+        deletionLength: 4,
+        insertion: { text: 'x ' }
+      });
+
+      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
     });
   });
 });

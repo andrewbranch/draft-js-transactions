@@ -20,17 +20,17 @@ function _binaryFindIndex<T, U>(
   if (upper - lower === 0) {
     const valueAtConvergence = valueExtractor(collection.get(upper));
     const compareResult = valueComparer(insertionValue, valueAtConvergence);
-    return upper + Number(compareResult > 0);
+    return Math.min(upper + Number(compareResult >= 0), collection.size);
   }
 
   const index = Math.floor((upper + lower) / 2);
   const valueAtIndex = valueExtractor(collection.get(index));
   const compareResult = valueComparer(insertionValue, valueAtIndex);
-  if (compareResult === 0) {
-    return index;
-  }
+  // if (compareResult === 0) {
+  //   return index;
+  // }
 
-  const [newLower, newUpper] = compareResult > 0 ? [index + 1, upper] : [lower, index];
+  const [newLower, newUpper] = compareResult >= 0 ? [index + 1, upper] : [lower, index];
   return _binaryFindIndex(
     collection,
     insertion,

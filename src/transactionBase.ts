@@ -26,24 +26,6 @@ export function addEdit(edits: Map<string, List<Edit>>, edit: Edit): Map<string,
   return edits.set(edit.blockKey, List.of(edit)) as Map<string, List<Edit>>;
 };
 
-export function removeEdit(edits: Map<string, List<Edit>>, edit: Edit): Map<string, List<Edit>> {
-  const blockEdits = edits.get(edit.blockKey);
-  if (blockEdits) {
-    const index = binaryFindIndex(
-      blockEdits,
-      edit,
-      identity,
-      compareEdits
-    );
-
-    if (edit === blockEdits.get(index)) {
-      return edits.set(edit.blockKey, blockEdits.splice(index, 1) as List<Edit>) as Map<string, List<Edit>>;
-    }
-  }
-
-  return edits;
-};
-
 const isInsertionCallback = <T>(fn: any): fn is InsertionCallback<T> => {
   return typeof fn === 'function';
 };
@@ -87,7 +69,7 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
             after: nextCharIndex > blockLength - 1 ? undefined : block.getEntityAt(nextCharIndex)
           });
           const anchorOffset = Math.max(updates!.deletionEnd, offset);
-          const focusOffset = anchorOffset + (deletionLength || 0) - (anchorOffset - offset);
+          const focusOffset = Math.max(anchorOffset + (deletionLength || 0) - (anchorOffset - offset), anchorOffset);
           const selectionToReplace = SelectionState.createEmpty(blockKey).merge({
             anchorOffset: updates!.offset + anchorOffset,
             focusOffset: updates!.offset + focusOffset

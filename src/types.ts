@@ -84,7 +84,6 @@ export type Edit = SliceEdit;
 
 export interface Transaction {
   addEdit(edit: Edit): Transaction;
-  removeEdit(edit: Edit): Transaction;
   apply(editorState: EditorState): EditorState;
 };
 
