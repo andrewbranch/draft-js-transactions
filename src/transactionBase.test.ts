@@ -60,10 +60,22 @@ describe('transactionBase', () => {
  
   describe('apply', () => {
     describe('error handling', () => {
-      test('Unrecognized edit type throws', () => {
+      test('unrecognized edit type throws', () => {
         expect(() => {
           apply(addEdit(Map(), { type: 'asdfjkl;' as any, blockKey: '1', offset: 0 }), createEditorState());
         }).toThrow(/unrecognized edit type/i);
+      });
+
+      test('unrecognized selection edge handling throws', () => {
+        expect(() => {
+          const editorState = createEditorState();
+          apply(addEdit(Map(), {
+            type: 'slice',
+            blockKey: editorState.getCurrentContent().getFirstBlock().getKey(),
+            offset: 0,
+            insertion: { text: '', selectionEdgeHandling: 'asdfjk;' as any }
+          }), editorState);
+        }).toThrow(/unrecognized selection ?edge ?handling/i);
       });
     });
 
@@ -253,6 +265,21 @@ describe('transactionBase', () => {
 
         expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
       });
+
+      test('edits occur in the correct block', () => {
+        const editorState = createEditorState('one two\nthree');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[1].getKey(),
+          offset: 0,
+          deletionLength: 5,
+          insertion: { text: 'four' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one two\nfour');
+      });
     });
 
     describe('styles and entities', () => {
@@ -355,6 +382,133 @@ describe('transactionBase', () => {
           anchorOffset: 8,
           focusKey: blockKey,
           focusOffset: 8,
+          hasFocus: true,
+          isBackward: false
+        });
+      });
+
+      test('deleting text before a selection moves selection back', () => {
+        let editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge({
+          anchorOffset: 4,
+          focusOffset: 4
+        }) as SelectionState);
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 0,
+          deletionLength: 4
+        });
+
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blockKey,
+          anchorOffset: 0,
+          focusKey: blockKey,
+          focusOffset: 0,
+          hasFocus: true,
+          isBackward: false
+        });
+      });
+
+      test('inserting text after a selection doesn’t move the selection', () => {
+        let editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 7,
+          insertion: { text: ' three' }
+        });
+
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blockKey,
+          anchorOffset: 0,
+          focusKey: blockKey,
+          focusOffset: 0,
+          hasFocus: true,
+          isBackward: false
+        });
+      });
+
+      test('inserting text in another block doesn’t move the selection', () => {
+        let editorState = createEditorState('one two\nthree');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge({
+          anchorOffset: 4,
+          focusOffset: 4
+        }) as SelectionState);
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[1].getKey(),
+          offset: 0,
+          insertion: { text: 'four ' }
+        });
+
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blocks[0].getKey(),
+          anchorOffset: 4,
+          focusKey: blocks[0].getKey(),
+          focusOffset: 4,
+          hasFocus: true,
+          isBackward: false
+        });
+      });
+
+      test('replacing text before a selection moves the selection by the net insertion length', () => {
+        let editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge({
+          anchorOffset: 4,
+          focusOffset: 4
+        }) as SelectionState);
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 0,
+          deletionLength: 3,
+          insertion: { text: 'four' }
+        });
+
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blockKey,
+          anchorOffset: 5,
+          focusKey: blockKey,
+          focusOffset: 5,
+          hasFocus: true,
+          isBackward: false
+        });
+      });
+
+      test('deleting text around a selection moves the selection to the beginning of the deleted range', () => {
+        let editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge({
+          anchorOffset: 2,
+          focusOffset: 2
+        }) as SelectionState);
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 1,
+          deletionLength: 2
+        });
+
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blockKey,
+          anchorOffset: 1,
+          focusKey: blockKey,
+          focusOffset: 1,
           hasFocus: true,
           isBackward: false
         });

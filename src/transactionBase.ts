@@ -78,6 +78,8 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
       const { type, insertion, deletionLength = 0, offset, blockKey } = edit!;
       switch (type) {
         case 'slice':
+          const shouldMoveAnchor = selectionState.getAnchorKey() === blockKey;
+          const shouldMoveFocus = selectionState.getFocusKey() === blockKey;
           const text = insertion ? insertion.text : '';
           const netInsertionLength = text.length - deletionLength;
           const position = offset + updates!.offset;
@@ -104,8 +106,12 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
             content: Modifier.replaceText(updates!.content, selectionToReplace, text, style, entityKey),
             offset: updates!.offset + netInsertionLength,
             deletionEnd: updates!.offset + focusOffset,
-            shiftAnchor: updates!.shiftAnchor + getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'end' : 'start'),
-            shiftFocus: updates!.shiftFocus + getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'start' : 'end'),
+            shiftAnchor: updates!.shiftAnchor + (shouldMoveAnchor
+              ? getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'end' : 'start')
+              : 0),
+            shiftFocus: updates!.shiftFocus + (shouldMoveFocus
+              ? getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'start' : 'end')
+              : 0),
             changeType: insertion ?
               'insert-characters' : deletionLength ?
               updates!.changeType || 'remove-range' :
