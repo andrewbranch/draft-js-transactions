@@ -19,21 +19,21 @@ export type InsertionCallback<T> = (characters: NeighboringCharacterAttributes<T
  */
 export enum SelectionEdgeHandling {
   /** Inserts the text before the selection edge. */
-  InsertBefore = 1 << 0,
+  InsertBefore = 'insert-before',
   /** Inserts the text after the selection edge. */
-  InsertAfter = 1 << 1,
+  InsertAfter = 'insert-after',
   /**
    * Inserts the text inside a non-collapsed selection; that is, after
    * a leading selection edge and before a trailing selection edge.
    * Falls back to `InsertBefore` if the selection is not collapsed.
    */
-  InsertInside = 1 << 2,
+  InsertInside = 'insert-inside',
   /**
    * Inserts the text outside a non-collapsed selection; that is, before
    * a leading selection edge and after a trailing selection edge. Falls
    * back to `InsertBefore` if the selection is not collapsed.
    */
-  InsertOutside = 1 << 3
+  InsertOutside = 'insert-outside'
 };
 
 /** Describes text inserted by a SliceEdit. */

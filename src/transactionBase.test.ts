@@ -1,5 +1,5 @@
-import { EditorState, ContentState } from 'draft-js';
-import { Map, List } from 'immutable';
+import { EditorState, ContentState, SelectionState } from 'draft-js';
+import { Map, List, OrderedSet } from 'immutable';
 import { Edit } from './types';
 import { addEdit, apply } from './transactionBase';
 
@@ -59,190 +59,306 @@ describe('transactionBase', () => {
 
  
   describe('apply', () => {
-    test('can insert characters at multiple positions in a block', () => {
-      const editorState = createEditorState('one two');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 0,
-        insertion: { text: 'zero ' }
+    describe('error handling', () => {
+      test('Unrecognized edit type throws', () => {
+        expect(() => {
+          apply(addEdit(Map(), { type: 'asdfjkl;' as any, blockKey: '1', offset: 0 }), createEditorState());
+        }).toThrow(/unrecognized edit type/i);
       });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        insertion: { text: 'one-and-a-half ' }
-      });
-
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('zero one one-and-a-half two');
     });
 
-    test('can delete characters at multiple positions in a block', () => {
-      const editorState = createEditorState('one two three');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 0,
-        deletionLength: 4
-      });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 7,
-        deletionLength: 6
+    describe('basic insertions and deletions', () => {
+      test('can insert characters at multiple positions in a block', () => {
+        const editorState = createEditorState('one two');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 0,
+          insertion: { text: 'zero ' }
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          insertion: { text: 'one-and-a-half ' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('zero one one-and-a-half two');
       });
 
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('two');
+      test('can delete characters at multiple positions in a block', () => {
+        const editorState = createEditorState('one two three');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 0,
+          deletionLength: 4
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 7,
+          deletionLength: 6
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('two');
+      });
+
+      test('can delete and insert with a single edit', () => {
+        const editorState = createEditorState('one two three');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 3,
+          insertion: { text: 'dos' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one dos three');
+      });
+
+      test('overlapping deletions delete the union of the deletion range', () => {
+        const editorState = createEditorState('a b c d e f');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 0,
+          deletionLength: 4,
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 2,
+          deletionLength: 4
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('d e f');
+      });
+
+      test('can replace multiple ranges with longer insertions than deletions', () => {
+        const editorState = createEditorState('one x three x five');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 1,
+          insertion: { text: 'two' }
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 12,
+          deletionLength: 1,
+          insertion: { text: 'four' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one two three four five');
+      });
+
+      test('can replace multiple ranges with shorter insertions than deletions', () => {
+        const editorState = createEditorState('one two three four five');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 3,
+          insertion: { text: 'x' }
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 14,
+          deletionLength: 4,
+          insertion: { text: 'x' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three x five');
+      });
+
+      test('can insert text into a deleted range', () => {
+        const editorState = createEditorState('one two three');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 3,
+          insertion: { text: '' }
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 0,
+          insertion: { text: 'x' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
+      });
+
+      test('can replace text in a deleted range', () => {
+        const editorState = createEditorState('one two three');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 3,
+          insertion: { text: '' }
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 2,
+          insertion: { text: 'x' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
+      });
+
+
+      test('can replace text overlapping deleted range', () => {
+        const editorState = createEditorState('one two three');
+        const blocks = editorState.getCurrentContent().getBlocksAsArray();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 3,
+          insertion: { text: '' }
+        });
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey: blocks[0].getKey(),
+          offset: 4,
+          deletionLength: 4,
+          insertion: { text: 'x ' }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
+      });
     });
 
-    test('can delete and insert with a single edit', () => {
-      const editorState = createEditorState('one two three');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 3,
-        insertion: { text: 'dos' }
+    describe('styles and entities', () => {
+      test('can insert text with inline styles', () => {
+        const editorState = createEditorState();
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 0,
+          insertion: {
+            text: 'Bold',
+            style: OrderedSet.of('BOLD')
+          }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getFirstBlock().getCharacterList()).toMatchSnapshot();
       });
 
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one dos three');
+      test('can insert text with an entity key', () => {
+        const editorState = createEditorState();
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 0,
+          insertion: {
+            text: 'Entity',
+            entityKey: '1'
+          }
+        });
+
+        expect(apply(editMap, editorState).getCurrentContent().getFirstBlock().getCharacterList()).toMatchSnapshot();
+      });
+
+      test('can insert text with a style callback', () => {
+        let editorState = createEditorState();
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        let setupEdits: Map<string, List<Edit>> = Map();
+        setupEdits = addEdit(setupEdits, {
+          type: 'slice',
+          blockKey,
+          offset: 0,
+          insertion: {
+            text: 'bold',
+            style: OrderedSet.of('BOLD')
+          }
+        });
+        setupEdits = addEdit(setupEdits, {
+          type: 'slice',
+          blockKey,
+          offset: 4,
+          insertion: {
+            text: 'italic',
+            style: OrderedSet.of('ITALIC')
+          }
+        });
+        editorState = apply(setupEdits, editorState);
+
+        let testEdits: Map<string, List<Edit>> = Map();
+        testEdits = addEdit(testEdits, {
+          type: 'slice',
+          blockKey,
+          offset: 4,
+          insertion: {
+            text: 'both',
+            style: ({ before, after }) => {
+              expect(before).toEqual(OrderedSet.of('BOLD'));
+              expect(after).toEqual(OrderedSet.of('ITALIC'));
+              return before!.union(after!);
+            }
+          }
+        });
+
+        expect(apply(testEdits, editorState).getCurrentContent().getFirstBlock().getCharacterList()).toMatchSnapshot();
+      });
     });
 
-    test('overlapping deletions delete the union of the deletion range', () => {
-      const editorState = createEditorState('a b c d e f');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 0,
-        deletionLength: 4,
-      });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 2,
-        deletionLength: 4
-      });
+    describe('selection behavior', () => {
+      test('inserting text before a selection moves selection forward', () => {
+        let editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge({
+          anchorOffset: 4,
+          focusOffset: 4
+        }) as SelectionState);
 
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('d e f');
-    });
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'slice',
+          blockKey,
+          offset: 0,
+          insertion: { text: 'zero' }
+        });
 
-    test('can replace multiple ranges with longer insertions than deletions', () => {
-      const editorState = createEditorState('one x three x five');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 1,
-        insertion: { text: 'two' }
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blockKey,
+          anchorOffset: 8,
+          focusKey: blockKey,
+          focusOffset: 8,
+          hasFocus: true,
+          isBackward: false
+        });
       });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 12,
-        deletionLength: 1,
-        insertion: { text: 'four' }
-      });
-
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one two three four five');
-    });
-
-    test('can replace multiple ranges with shorter insertions than deletions', () => {
-      const editorState = createEditorState('one two three four five');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 3,
-        insertion: { text: 'x' }
-      });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 14,
-        deletionLength: 4,
-        insertion: { text: 'x' }
-      });
-
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three x five');
-    });
-
-    test('can insert text into a deleted range', () => {
-      const editorState = createEditorState('one two three');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 3,
-        insertion: { text: '' }
-      });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 0,
-        insertion: { text: 'x' }
-      });
-
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
-    });
-
-    test('can replace text in a deleted range', () => {
-      const editorState = createEditorState('one two three');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 3,
-        insertion: { text: '' }
-      });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 2,
-        insertion: { text: 'x' }
-      });
-
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
-    });
-
-
-    test('can replace text overlapping deleted range', () => {
-      const editorState = createEditorState('one two three');
-      const blocks = editorState.getCurrentContent().getBlocksAsArray();
-      let editMap: Map<string, List<Edit>> = Map();
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 3,
-        insertion: { text: '' }
-      });
-      editMap = addEdit(editMap, {
-        type: 'slice',
-        blockKey: blocks[0].getKey(),
-        offset: 4,
-        deletionLength: 4,
-        insertion: { text: 'x ' }
-      });
-
-      expect(apply(editMap, editorState).getCurrentContent().getPlainText()).toBe('one x three');
     });
   });
 });

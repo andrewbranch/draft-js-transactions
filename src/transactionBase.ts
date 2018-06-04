@@ -1,8 +1,9 @@
 import { EditorState, Modifier, SelectionState } from 'draft-js';
 import { Collection, List, Map } from 'immutable';
-import { Transaction, Edit, NeighboringCharacterAttributes, InsertionCallback, ChangeType } from './types';
+import { Transaction, Edit, NeighboringCharacterAttributes, InsertionCallback, ChangeType, SliceEdit, SelectionEdgeHandling } from './types';
 import { binaryFindIndex, ComparerFunction } from './utils/binaryFindIndex';
 import { identity } from './utils/identity';
+import { assertUnreachable } from './utils/assertUnreachable';
 
 const compareEdits: ComparerFunction<Edit> = (a, b) => {
   const offsetOrder = a.offset - b.offset;
@@ -41,25 +42,49 @@ function getAttributes<T extends string | object>(
   return attr;
 }
 
+function getSelectionAdjustment(selection: { blockKey: string, offset: number }, edit: SliceEdit, edge?: 'start' | 'end'): number {
+  if (selection.blockKey !== edit.blockKey || edit.offset > selection.offset) return 0;
+  const { insertion, deletionLength = 0 } = edit;
+  const insertionLength = insertion ? insertion.text.length : 0;
+  if (edit.offset < selection.offset) {
+    return insertionLength - Math.min(deletionLength, selection.offset - edit.offset);
+  }
+
+  if (insertion) {
+    const { selectionEdgeHandling = SelectionEdgeHandling.InsertBefore } = insertion;
+    switch (selectionEdgeHandling) {
+      case SelectionEdgeHandling.InsertBefore: return insertionLength;
+      case SelectionEdgeHandling.InsertAfter: return 0;
+      case SelectionEdgeHandling.InsertInside:
+        return edge !== 'end' ? insertionLength : 0;
+      case SelectionEdgeHandling.InsertOutside:
+        return edge !== 'start' ? insertionLength : 0;
+      default:
+        assertUnreachable(selectionEdgeHandling, new Error(`Unrecognized selectionEdgeHandling: ${selectionEdgeHandling}`));
+    }
+  }
+
+  return insertionLength;
+}
+
 export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, changeType?: ChangeType): EditorState {
   const content = editorState.getCurrentContent();
   const selectionState = editorState.getSelection();
-  const anchorOffset = selectionState.getAnchorOffset();
-  const focusOffset = selectionState.getFocusOffset();
+  const selection = { blockKey: selectionState.getAnchorKey(), offset: selectionState.getAnchorOffset() };
+  const isBackward = selectionState.getIsBackward();
+  const isCollapsed = selectionState.isCollapsed();
   const result = edits.reduce((updates, blockEdits) => {
     return blockEdits!.reduce((updates, edit) => {
-      const { type, insertion, deletionLength, offset, blockKey } = edit!;
-      const shouldMoveAnchor = selectionState.getAnchorKey() === blockKey;
-      const shouldMoveFocus = selectionState.getFocusKey() === blockKey;
+      const { type, insertion, deletionLength = 0, offset, blockKey } = edit!;
       switch (type) {
         case 'slice':
           const text = insertion ? insertion.text : '';
-          const netInsertionLength = text.length - (deletionLength || 0);
-          const position = updates!.offset;
+          const netInsertionLength = text.length - deletionLength;
+          const position = offset + updates!.offset;
           const block = content.getBlockForKey(blockKey);
           const blockLength = block.getLength();
           const prevCharIndex = position - 1;
-          const nextCharIndex = position + (deletionLength || 0);
+          const nextCharIndex = position + deletionLength;
           const style = getAttributes(insertion ? insertion.style : undefined, {
             before: prevCharIndex < 0 ? undefined : block.getInlineStyleAt(prevCharIndex),
             after: nextCharIndex > blockLength - 1 ? undefined : block.getInlineStyleAt(nextCharIndex)
@@ -69,7 +94,7 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
             after: nextCharIndex > blockLength - 1 ? undefined : block.getEntityAt(nextCharIndex)
           });
           const anchorOffset = Math.max(updates!.deletionEnd, offset);
-          const focusOffset = Math.max(anchorOffset + (deletionLength || 0) - (anchorOffset - offset), anchorOffset);
+          const focusOffset = Math.max(anchorOffset + deletionLength - (anchorOffset - offset), anchorOffset);
           const selectionToReplace = SelectionState.createEmpty(blockKey).merge({
             anchorOffset: updates!.offset + anchorOffset,
             focusOffset: updates!.offset + focusOffset
@@ -79,27 +104,34 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
             content: Modifier.replaceText(updates!.content, selectionToReplace, text, style, entityKey),
             offset: updates!.offset + netInsertionLength,
             deletionEnd: updates!.offset + focusOffset,
-            changeType: insertion
-              ? 'insert-characters' : deletionLength
-              ? updates!.changeType || 'remove-range'
-              : null
+            shiftAnchor: updates!.shiftAnchor + getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'end' : 'start'),
+            shiftFocus: updates!.shiftFocus + getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'start' : 'end'),
+            changeType: insertion ?
+              'insert-characters' : deletionLength ?
+              updates!.changeType || 'remove-range' :
+              null
           };
-        default:
-          ((t: never) => {
-            throw new Error(`Unrecognized edit type: ${type}`);
-          })(type);
+        default: return assertUnreachable(type, new Error(`Unrecognized edit type: ${type}`));
       }
     }, updates);
   }, {
     content,
     offset: 0,
     deletionEnd: 0,
+    shiftAnchor: 0,
+    shiftFocus: 0,
     changeType: null as ChangeType | null
   });
 
-  return EditorState.push(
-    editorState,
-    result.content,
-    changeType || result.changeType || 'insert-characters'
+  return EditorState.forceSelection(
+    EditorState.push(
+      editorState,
+      result.content,
+      changeType || result.changeType || 'insert-characters'
+    ),
+    selectionState.merge({
+      anchorOffset: selectionState.getAnchorOffset() + result.shiftAnchor,
+      focusOffset: selectionState.getFocusOffset() + result.shiftFocus
+    }) as SelectionState
   );
 };

@@ -1,0 +1,152 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`transactionBase apply styles and entities can insert text with a style callback 1`] = `
+Immutable.List [
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "ITALIC",
+    ],
+    "entity": null,
+  },
+]
+`;
+
+exports[`transactionBase apply styles and entities can insert text with an entity key 1`] = `
+Immutable.List [
+  Immutable.Record {
+    "style": Immutable.OrderedSet [],
+    "entity": "1",
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [],
+    "entity": "1",
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [],
+    "entity": "1",
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [],
+    "entity": "1",
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [],
+    "entity": "1",
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [],
+    "entity": "1",
+  },
+]
+`;
+
+exports[`transactionBase apply styles and entities can insert text with inline styles 1`] = `
+Immutable.List [
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+  Immutable.Record {
+    "style": Immutable.OrderedSet [
+      "BOLD",
+    ],
+    "entity": null,
+  },
+]
+`;
