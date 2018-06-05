@@ -1,5 +1,5 @@
 import { List } from 'immutable';
-import { binaryFindIndex } from './binaryFindIndex';
+import { binaryFindIndex } from '../src/utils/binaryFindIndex';
 
 describe('utils > binaryFindIndex', () => {
   test('should work for a list with an even number of elements', () => {

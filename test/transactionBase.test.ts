@@ -1,7 +1,7 @@
 import { EditorState, ContentState, SelectionState } from 'draft-js';
 import { Map, List, OrderedSet } from 'immutable';
-import { Edit } from './types';
-import { addEdit, apply } from './transactionBase';
+import { Edit } from '../src/types';
+import { addEdit, apply } from '../src/transactionBase';
 
 const createEditorState = (text?: string) => EditorState.createWithContent(ContentState.createFromText(text || ''));
 
