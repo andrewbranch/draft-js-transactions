@@ -15,7 +15,7 @@
     "React"
   ],
   "author": "Andrew Branch <andrew@wheream.io>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/andrewbranch/draft-js-transactions/issues"
   },

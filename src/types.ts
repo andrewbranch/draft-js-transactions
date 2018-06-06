@@ -36,7 +36,7 @@ export enum SelectionEdgeHandling {
   InsertOutside = 'insert-outside'
 };
 
-/** Describes text inserted by a SliceEdit. */
+/** Describes text inserted by a SpliceEdit. */
 export type Insertion = {
   /** The characters to insert. */
   text: string;
@@ -72,17 +72,18 @@ export interface BaseEdit {
 /**
  * An edit within a block that can delete and insert characters at a specific position.
  */
-export interface SliceEdit extends BaseEdit {
-  type: 'slice',
+export interface SpliceEdit extends BaseEdit {
+  type: 'splice',
   /** The number of characters to remove, starting at `offset`. */
   deletionLength?: number;
   /** The description of the text to insert at `offset`. */
   insertion?: Insertion;
 };
 
-export type Edit = SliceEdit;
+export type Edit = SpliceEdit;
 
 export interface Transaction {
+  size: number;
   addEdit(edit: Edit): Transaction;
   apply(editorState: EditorState): EditorState;
 };

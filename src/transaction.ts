@@ -5,6 +5,11 @@ import { addEdit, apply } from './transactionBase';
 
 export class Transaction implements ITransaction {
   private edits: Map<string, List<Edit>> = Map();
+
+  public get size() {
+    return this.edits.size;
+  }
+
   public addEdit(edit: Edit) {
     this.edits = addEdit(this.edits, edit);
     return this;

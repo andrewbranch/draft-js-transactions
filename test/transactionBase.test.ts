@@ -10,9 +10,9 @@ describe('transactionBase', () => {
     test('inserts edits by block', () => {
       let editMap: Map<string, List<Edit>> = Map();
       const edits: Edit[] = [
-        { type: 'slice', blockKey: '1', offset: 0 },
-        { type: 'slice', blockKey: '1', offset: 0 },
-        { type: 'slice', blockKey: '2', offset: 0 }
+        { type: 'splice', blockKey: '1', offset: 0 },
+        { type: 'splice', blockKey: '1', offset: 0 },
+        { type: 'splice', blockKey: '2', offset: 0 }
       ];
 
       editMap = addEdit(editMap, edits[0]);
@@ -27,9 +27,9 @@ describe('transactionBase', () => {
     test('inserts edits ordered by offset', () => {
       let editMap: Map<string, List<Edit>> = Map();
       const edits: Edit[] = [
-        { type: 'slice', blockKey: '1', offset: 2 },
-        { type: 'slice', blockKey: '1', offset: 0 },
-        { type: 'slice', blockKey: '1', offset: 1 }
+        { type: 'splice', blockKey: '1', offset: 2 },
+        { type: 'splice', blockKey: '1', offset: 0 },
+        { type: 'splice', blockKey: '1', offset: 1 }
       ];
 
       editMap = addEdit(editMap, edits[0]);
@@ -43,9 +43,9 @@ describe('transactionBase', () => {
     test('inserts edits of equal offset ordered by precedence', () => {
       let editMap: Map<string, List<Edit>> = Map();
       const edits: Edit[] = [
-        { type: 'slice', blockKey: '1', offset: 0, precedence: 2 },
-        { type: 'slice', blockKey: '1', offset: 0, precedence: 0 },
-        { type: 'slice', blockKey: '1', offset: 0, precedence: 1 }
+        { type: 'splice', blockKey: '1', offset: 0, precedence: 2 },
+        { type: 'splice', blockKey: '1', offset: 0, precedence: 0 },
+        { type: 'splice', blockKey: '1', offset: 0, precedence: 1 }
       ];
 
       editMap = addEdit(editMap, edits[0]);
@@ -70,7 +70,7 @@ describe('transactionBase', () => {
         expect(() => {
           const editorState = createEditorState();
           apply(addEdit(Map(), {
-            type: 'slice',
+            type: 'splice',
             blockKey: editorState.getCurrentContent().getFirstBlock().getKey(),
             offset: 0,
             insertion: { text: '', selectionEdgeHandling: 'asdfjk;' as any }
@@ -85,13 +85,13 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 0,
           insertion: { text: 'zero ' }
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           insertion: { text: 'one-and-a-half ' }
@@ -105,13 +105,13 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 0,
           deletionLength: 4
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 7,
           deletionLength: 6
@@ -125,7 +125,7 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 3,
@@ -140,13 +140,13 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 0,
           deletionLength: 4,
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 2,
           deletionLength: 4
@@ -160,14 +160,14 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 1,
           insertion: { text: 'two' }
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 12,
           deletionLength: 1,
@@ -182,14 +182,14 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 3,
           insertion: { text: 'x' }
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 14,
           deletionLength: 4,
@@ -204,14 +204,14 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 3,
           insertion: { text: '' }
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 0,
@@ -226,14 +226,14 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 3,
           insertion: { text: '' }
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 2,
@@ -249,14 +249,14 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 3,
           insertion: { text: '' }
         });
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[0].getKey(),
           offset: 4,
           deletionLength: 4,
@@ -271,7 +271,7 @@ describe('transactionBase', () => {
         const blocks = editorState.getCurrentContent().getBlocksAsArray();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[1].getKey(),
           offset: 0,
           deletionLength: 5,
@@ -288,7 +288,7 @@ describe('transactionBase', () => {
         const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 0,
           insertion: {
@@ -305,7 +305,7 @@ describe('transactionBase', () => {
         const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 0,
           insertion: {
@@ -322,7 +322,7 @@ describe('transactionBase', () => {
         const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
         let setupEdits: Map<string, List<Edit>> = Map();
         setupEdits = addEdit(setupEdits, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 0,
           insertion: {
@@ -331,7 +331,7 @@ describe('transactionBase', () => {
           }
         });
         setupEdits = addEdit(setupEdits, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 4,
           insertion: {
@@ -343,7 +343,7 @@ describe('transactionBase', () => {
 
         let testEdits: Map<string, List<Edit>> = Map();
         testEdits = addEdit(testEdits, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 4,
           insertion: {
@@ -371,7 +371,7 @@ describe('transactionBase', () => {
 
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 0,
           insertion: { text: 'zero' }
@@ -397,7 +397,7 @@ describe('transactionBase', () => {
 
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 0,
           deletionLength: 4
@@ -419,7 +419,7 @@ describe('transactionBase', () => {
 
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 7,
           insertion: { text: ' three' }
@@ -445,7 +445,7 @@ describe('transactionBase', () => {
 
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey: blocks[1].getKey(),
           offset: 0,
           insertion: { text: 'four ' }
@@ -471,7 +471,7 @@ describe('transactionBase', () => {
 
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 0,
           deletionLength: 3,
@@ -498,7 +498,7 @@ describe('transactionBase', () => {
 
         let editMap: Map<string, List<Edit>> = Map();
         editMap = addEdit(editMap, {
-          type: 'slice',
+          type: 'splice',
           blockKey,
           offset: 1,
           deletionLength: 2

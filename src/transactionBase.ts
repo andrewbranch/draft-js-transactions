@@ -1,6 +1,6 @@
 import { EditorState, Modifier, SelectionState } from 'draft-js';
 import { Collection, List, Map } from 'immutable';
-import { Transaction, Edit, NeighboringCharacterAttributes, InsertionCallback, ChangeType, SliceEdit, SelectionEdgeHandling } from './types';
+import { Transaction, Edit, NeighboringCharacterAttributes, InsertionCallback, ChangeType, SpliceEdit, SelectionEdgeHandling } from './types';
 import { binaryFindIndex, ComparerFunction } from './utils/binaryFindIndex';
 import { identity } from './utils/identity';
 import { assertUnreachable } from './utils/assertUnreachable';
@@ -42,7 +42,7 @@ function getAttributes<T extends string | object>(
   return attr;
 }
 
-function getSelectionAdjustment(selection: { blockKey: string, offset: number }, edit: SliceEdit, edge?: 'start' | 'end'): number {
+function getSelectionAdjustment(selection: { blockKey: string, offset: number }, edit: SpliceEdit, edge?: 'start' | 'end'): number {
   if (selection.blockKey !== edit.blockKey || edit.offset > selection.offset) return 0;
   const { insertion, deletionLength = 0 } = edit;
   const insertionLength = insertion ? insertion.text.length : 0;
@@ -77,7 +77,7 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
     return blockEdits!.reduce((updates, edit) => {
       const { type, insertion, deletionLength = 0, offset, blockKey } = edit!;
       switch (type) {
-        case 'slice':
+        case 'splice':
           const shouldMoveAnchor = selectionState.getAnchorKey() === blockKey;
           const shouldMoveFocus = selectionState.getFocusKey() === blockKey;
           const text = insertion ? insertion.text : '';

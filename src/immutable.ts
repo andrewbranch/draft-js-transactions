@@ -4,6 +4,7 @@ import { addEdit, apply } from './transactionBase';
 
 function _createTransaction(edits: Map<string, List<Edit>>): Transaction {
   return {
+    get size() { return edits.size; },
     addEdit: edit => _createTransaction(addEdit(edits, edit)),
     apply: editorState => apply(edits, editorState)
   };
