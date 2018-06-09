@@ -1,4 +1,4 @@
-# draft-js-transactions
+# draft-js-transactions [![Build Status](https://travis-ci.com/andrewbranch/draft-js-transactions.svg?branch=master)](https://travis-ci.com/andrewbranch/draft-js-transactions)
 
 **draft-js-transactions** is a lightweight, dependency-free library for making multiple edits at once to a [Draft](https://github.com/facebook/draft-js) EditorState.
 

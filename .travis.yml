@@ -9,7 +9,11 @@ cache:
 
 install:
 - npm install
+- npm install --global codecov
 
 script:
 - node --version
 - npm test
+
+after_success:
+- codecov
