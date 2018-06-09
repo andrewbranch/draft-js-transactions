@@ -56,9 +56,9 @@ function getSelectionAdjustment(selection: { blockKey: string, offset: number },
       case SelectionEdgeHandling.InsertBefore: return insertionLength;
       case SelectionEdgeHandling.InsertAfter: return 0;
       case SelectionEdgeHandling.InsertInside:
-        return edge !== 'end' ? insertionLength : 0;
-      case SelectionEdgeHandling.InsertOutside:
         return edge !== 'start' ? insertionLength : 0;
+      case SelectionEdgeHandling.InsertOutside:
+        return edge !== 'end' ? insertionLength : 0;
       default:
         assertUnreachable(selectionEdgeHandling, new Error(`Unrecognized selectionEdgeHandling: ${selectionEdgeHandling}`));
     }
@@ -70,7 +70,8 @@ function getSelectionAdjustment(selection: { blockKey: string, offset: number },
 export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, changeType?: ChangeType): EditorState {
   const content = editorState.getCurrentContent();
   const selectionState = editorState.getSelection();
-  const selection = { blockKey: selectionState.getAnchorKey(), offset: selectionState.getAnchorOffset() };
+  const anchor = { blockKey: selectionState.getAnchorKey(), offset: selectionState.getAnchorOffset() };
+  const focus = { blockKey: selectionState.getFocusKey(), offset: selectionState.getFocusOffset() };
   const isBackward = selectionState.getIsBackward();
   const isCollapsed = selectionState.isCollapsed();
   const result = edits.reduce((updates, blockEdits) => {
@@ -107,15 +108,15 @@ export function apply(edits: Map<string, List<Edit>>, editorState: EditorState, 
             offset: updates!.offset + netInsertionLength,
             deletionEnd: updates!.offset + focusOffset,
             shiftAnchor: updates!.shiftAnchor + (shouldMoveAnchor
-              ? getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'end' : 'start')
+              ? getSelectionAdjustment(anchor, edit!, isCollapsed ? undefined : isBackward ? 'end' : 'start')
               : 0),
             shiftFocus: updates!.shiftFocus + (shouldMoveFocus
-              ? getSelectionAdjustment(selection, edit!, isCollapsed ? undefined : isBackward ? 'start' : 'end')
+              ? getSelectionAdjustment(focus, edit!, isCollapsed ? undefined : isBackward ? 'start' : 'end')
               : 0),
-            changeType: insertion ?
-              'insert-characters' : deletionLength ?
-              updates!.changeType || 'remove-range' :
-              null
+            changeType: deletionLength ?
+              'remove-range' : insertion ?
+              updates!.changeType || 'insert-characters' :
+              updates!.changeType
           };
         default: return assertUnreachable(type, new Error(`Unrecognized edit type: ${type}`));
       }

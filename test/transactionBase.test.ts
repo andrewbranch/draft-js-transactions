@@ -1,6 +1,6 @@
 import { EditorState, ContentState, SelectionState } from 'draft-js';
 import { Map, List, OrderedSet } from 'immutable';
-import { Edit } from '../src/types';
+import { Edit, SelectionEdgeHandling } from '../src/types';
 import { addEdit, apply } from '../src/transactionBase';
 
 const createEditorState = (text?: string) => EditorState.createWithContent(ContentState.createFromText(text || ''));
@@ -512,6 +512,220 @@ describe('transactionBase', () => {
           hasFocus: true,
           isBackward: false
         });
+      });
+
+      test('SelectionEdgeHandling.InsertAfter works', () => {
+        let editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+        editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge({
+          anchorOffset: 2,
+          focusOffset: 2
+        }) as SelectionState);
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 2,
+          insertion: {
+            text: 'c',
+            selectionEdgeHandling: SelectionEdgeHandling.InsertAfter
+          }
+        });
+
+        expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+          anchorKey: blockKey,
+          anchorOffset: 2,
+          focusKey: blockKey,
+          focusOffset: 2,
+          hasFocus: true,
+          isBackward: false
+        });
+      });
+
+      [
+        { anchorOffset: 2, focusOffset: 5, isBackward: false },
+        { anchorOffset: 5, focusOffset: 2, isBackward: true },
+      ].forEach(selection => {
+        test(`SelectionEdgeHandling.InsertInside works when edit is at start edge${selection.isBackward ? ' (backward selection)' : ''}`, () => {
+          let editorState = createEditorState('one two');
+          const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+          editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge(selection) as SelectionState);
+
+          let editMap: Map<string, List<Edit>> = Map();
+          editMap = addEdit(editMap, {
+            type: 'splice',
+            blockKey,
+            offset: 2,
+            insertion: {
+              text: 'c',
+              selectionEdgeHandling: SelectionEdgeHandling.InsertInside
+            }
+          });
+
+          expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+            anchorKey: blockKey,
+            anchorOffset: selection.isBackward ? 6 : 2,
+            focusKey: blockKey,
+            focusOffset: selection.isBackward ? 2 : 6,
+            hasFocus: true,
+            isBackward: selection.isBackward
+          });
+        });
+
+        test(`SelectionEdgeHandling.InsertInside works when edit is at end edge${selection.isBackward ? ' (backward selection)' : ''}`, () => {
+          let editorState = createEditorState('one two');
+          const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+          editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge(selection) as SelectionState);
+
+          let editMap: Map<string, List<Edit>> = Map();
+          editMap = addEdit(editMap, {
+            type: 'splice',
+            blockKey,
+            offset: 5,
+            insertion: {
+              text: 'c',
+              selectionEdgeHandling: SelectionEdgeHandling.InsertInside
+            }
+          });
+
+          expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+            anchorKey: blockKey,
+            anchorOffset: selection.isBackward ? 6 : 2,
+            focusKey: blockKey,
+            focusOffset: selection.isBackward ? 2 : 6,
+            hasFocus: true,
+            isBackward: selection.isBackward
+          });
+        });
+
+        test(`SelectionEdgeHandling.InsertOutside works when edit is at start edge${selection.isBackward ? ' (backward selection)' : ''}`, () => {
+          let editorState = createEditorState('one two');
+          const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+          editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge(selection) as SelectionState);
+
+          let editMap: Map<string, List<Edit>> = Map();
+          editMap = addEdit(editMap, {
+            type: 'splice',
+            blockKey,
+            offset: 2,
+            insertion: {
+              text: 'c',
+              selectionEdgeHandling: SelectionEdgeHandling.InsertOutside
+            }
+          });
+
+          expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+            anchorKey: blockKey,
+            anchorOffset: selection.isBackward ? 6 : 3,
+            focusKey: blockKey,
+            focusOffset: selection.isBackward ? 3 : 6,
+            hasFocus: true,
+            isBackward: selection.isBackward
+          });
+        });
+
+        test(`SelectionEdgeHandling.InsertOutside works when edit is at end edge${selection.isBackward ? ' (backward selection)' : ''}`, () => {
+          let editorState = createEditorState('one two');
+          const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+          editorState = EditorState.forceSelection(editorState, editorState.getSelection().merge(selection) as SelectionState);
+
+          let editMap: Map<string, List<Edit>> = Map();
+          editMap = addEdit(editMap, {
+            type: 'splice',
+            blockKey,
+            offset: 5,
+            insertion: {
+              text: 'c',
+              selectionEdgeHandling: SelectionEdgeHandling.InsertOutside
+            }
+          });
+
+          expect(apply(editMap, editorState).getSelection().toJS()).toMatchObject({
+            anchorKey: blockKey,
+            anchorOffset: selection.isBackward ? 5 : 2,
+            focusKey: blockKey,
+            focusOffset: selection.isBackward ? 2 : 5,
+            hasFocus: true,
+            isBackward: selection.isBackward
+          });
+        });
+      });
+    });
+
+    describe('change type', () => {
+      test('change type is `insert-characters` if there are no deletions', () => {
+        const editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 0,
+          insertion: { text: 'zero' }
+        });
+
+        expect(apply(editMap, editorState).getLastChangeType()).toBe('insert-characters');
+      });
+
+      test('change type is `insert-characters` if there are no insertions or deletions', () => {
+        const editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 0
+        });
+
+        expect(apply(editMap, editorState).getLastChangeType()).toBe('insert-characters');
+      });
+
+      test('change type is `remove-range` if there are deletions', () => {
+        const editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 0,
+          deletionLength: 3,
+          insertion: { text: 'zero' }
+        });
+
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 4,
+          insertion: { text: 'twenty-' }
+        });
+
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 6
+        });
+
+        expect(apply(editMap, editorState).getLastChangeType()).toBe('remove-range');
+      });
+
+      test('change type is overridable', () => {
+        const editorState = createEditorState('one two');
+        const blockKey = editorState.getCurrentContent().getFirstBlock().getKey();
+
+        let editMap: Map<string, List<Edit>> = Map();
+        editMap = addEdit(editMap, {
+          type: 'splice',
+          blockKey,
+          offset: 0,
+          deletionLength: 3,
+          insertion: { text: 'zero' }
+        });
+
+        expect(apply(editMap, editorState, 'adjust-depth').getLastChangeType()).toBe('adjust-depth');
       });
     });
   });
