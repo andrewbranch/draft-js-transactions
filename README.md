@@ -4,6 +4,8 @@
 
 ## Installation
 
+🚨 PLACEHOLDER, NOT PUBLISHED YET 🚨
+
 ```
 npm install draft-js-transactions --save
 ```
@@ -149,5 +151,6 @@ If the offset is `0` or after the last character in a block, `before` or `after`
 1. [Open an issue](https://github.com/andrewbranch/draft-js-transactions/issues/new) describing what you’d like to do
 2. Fork this repo
 3. If you’re adding a feature, make sure new code is covered by tests. If you’re fixing a bug, demonstrate the failure by writing a new failing test first.
-4. Test your changes with `npm test`.
-5. Submit a PR referencing the issue you created in step 1. CI will ensure that tests pass and coverage hasn’t decreased.
+4. If you’ve added to or changed the API, update this README.
+5. Test your changes with `npm test`.
+6. Submit a PR referencing the issue you created in step 1. CI will ensure that tests pass and coverage hasn’t decreased.
